@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// RoleType sebagai ENUM
+// Model User
 type RoleType string
 
 const (
@@ -14,7 +14,6 @@ const (
 	RoleUser  RoleType = "USER"
 )
 
-// Model User
 type User struct {
 	ID            uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	Email         string         `json:"email" gorm:"unique;not null"`
