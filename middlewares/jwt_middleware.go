@@ -14,3 +14,4 @@ func JwtMiddleware() fiber.Handler {
 		AuthScheme:  "Bearer",
 	})
 }
+
