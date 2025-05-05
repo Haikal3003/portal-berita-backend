@@ -6,6 +6,7 @@ import (
 	"portal-berita-backend/database"
 	"portal-berita-backend/handlers"
 	"portal-berita-backend/routes"
+	"portal-berita-backend/seed"
 	"portal-berita-backend/services"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,10 +19,11 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	log.Println("DB_DSN:", os.Getenv("DB_DSN"))
+	// log.Println("DB_DSN:", os.Getenv("DB_DSN"))
 
 	database.ConnectDatabase()
 	database.AutoMigrateTables()
+	seed.SetupAdmin()
 
 	app := fiber.New()
 
