@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -12,10 +12,13 @@ var DB *gorm.DB
 
 func ConnectDatabase() {
 	dsn := os.Getenv("DB_DSN")
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if dsn == "" {
+		log.Fatal("DB_DSN environment variable is not set")
+	}
 
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("failed to connect database")
+		log.Fatalf("failed to connect to the database: %v", err)
 	}
 
 	DB = db

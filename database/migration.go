@@ -6,7 +6,7 @@ import (
 )
 
 func AutoMigrateTables() {
-	if DB != nil {
+	if DB == nil {
 		log.Fatal("Database is not connected")
 	}
 
@@ -23,9 +23,8 @@ func AutoMigrateTables() {
 	)
 
 	if err != nil {
-		log.Fatal("failed to migrate database")
+		log.Fatal("failed to migrate database: ", err)
 	}
 
 	log.Println("Database migrated successfully")
-
 }
