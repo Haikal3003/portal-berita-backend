@@ -5,6 +5,7 @@ import (
 
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func JwtMiddleware() fiber.Handler {
@@ -12,6 +13,14 @@ func JwtMiddleware() fiber.Handler {
 		SigningKey:  jwtware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET"))},
 		TokenLookup: "header:Authorization",
 		AuthScheme:  "Bearer",
+		SuccessHandler: func(c *fiber.Ctx) error {
+			token := c.Locals("user").(*jwt.Token)
+
+			claims := token.Claims.(jwt.MapClaims)
+			userID := claims["sub"].(string)
+			c.Locals("userID", userID)
+
+			return c.Next()
+		},
 	})
 }
-
