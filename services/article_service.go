@@ -23,17 +23,17 @@ func (s *ArticleService) GetArticles() ([]models.Article, error) {
 	return articles, err
 }
 
-func (s *ArticleService) GetArticleByID(id string) (models.Article, error) {
+func (s *ArticleService) GetArticleByID(id string) (*models.Article, error) {
 	var article models.Article
 	err := s.DB.Preload("Author.Profile").Preload("Categories").Preload("Tags").First(&article, "id = ?", id).Error
-	if err != nil {
-		return models.Article{}, err
-	}
-	return article, nil
+	return &article, err
 }
 
 func (s *ArticleService) CreateArticle(article *models.Article) error {
-	return s.DB.Create(article).Error
+	if err := s.DB.Create(article).Error; err != nil {
+		return err
+	}
+	return s.DB.Preload("Author.Profile").First(article, article.ID).Error
 }
 
 func (s *ArticleService) UpdateArticle(id string, updated *models.Article) error {
@@ -74,7 +74,10 @@ func (s *ArticleService) GetArticlesByTag(tagID string) ([]models.Article, error
 
 func (s *ArticleService) SearchArticles(keyword string) ([]models.Article, error) {
 	var articles []models.Article
-	err := s.DB.Where("LOWER(title) ILIKE ?", "%"+strings.ToLower(keyword)+"%").Preload("Author.Profile").Preload("Categories").Preload("Tags").Find(&articles).Error
-
+	err := s.DB.Where("LOWER(title) ILIKE ?", "%"+strings.ToLower(keyword)+"%").
+		Preload("Author.Profile").
+		Preload("Categories").
+		Preload("Tags").
+		Find(&articles).Error
 	return articles, err
 }

@@ -8,10 +8,10 @@ import (
 )
 
 type ArticleHandler struct {
-	ArticleService services.ArticleService
+	ArticleService *services.ArticleService
 }
 
-func NewArticleHandler(articleService services.ArticleService) *ArticleHandler {
+func NewArticleHandler(articleService *services.ArticleService) *ArticleHandler {
 	return &ArticleHandler{
 		ArticleService: articleService,
 	}

@@ -10,7 +10,7 @@ func AutoMigrateTables() {
 		log.Fatal("Database is not connected")
 	}
 
-	errDrop := DB.Migrator().DropTable(
+	tables := []interface{}{
 		&models.Bookmark{},
 		&models.Like{},
 		&models.Comment{},
@@ -20,9 +20,13 @@ func AutoMigrateTables() {
 		&models.Article{},
 		&models.Profile{},
 		&models.User{},
-	)
-	if errDrop != nil {
-		log.Println("Warning: Failed to drop tables:", errDrop)
+	}
+
+	for _, table := range tables {
+		errDrop := DB.Migrator().DropTable(table)
+		if errDrop != nil {
+			log.Println("Warning: Failed to drop table:", errDrop)
+		}
 	}
 
 	errMigrate := DB.AutoMigrate(
@@ -40,5 +44,5 @@ func AutoMigrateTables() {
 		log.Fatal("Failed to migrate database: ", errMigrate)
 	}
 
-	log.Println("✅ Database migrated successfully")
+	log.Println("Database migrated successfully")
 }

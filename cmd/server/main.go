@@ -34,10 +34,14 @@ func main() {
 	profileService := services.NewProfileService(database.DB)
 	profileHandler := handlers.NewProfileHandler(profileService)
 
+	articleService := services.NewArticleService(database.DB)
+	articleHandler := handlers.NewArticleHandler(articleService)
+
 	// init routes
 	api := app.Group("/api")
 	routes.AuthRoutes(api, authHandler)
 	routes.ProfileRoutes(api, profileHandler)
+	routes.ArticleRoutes(api, articleHandler)
 
 	app.Listen(":" + os.Getenv("PORT"))
 }

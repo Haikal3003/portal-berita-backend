@@ -28,14 +28,14 @@ const (
 type User struct {
 	ID            uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	Email         string         `json:"email" gorm:"unique;not null"`
-	Password      string         `json:"password" gorm:"not null"`
+	Password      string         `json:"-" gorm:"not null"` // Jangan expose password
 	Role          RoleType       `json:"role" gorm:"type:varchar(20);not null;default:'USER'"`
-	Profile       Profile        `json:"profile" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Articles      []Article      `json:"articles" gorm:"foreignKey:AuthorID"`
-	Notifications []Notification `json:"notifications" gorm:"foreignKey:UserID"`
-	Comments      []Comment      `json:"comments" gorm:"foreignKey:UserID"`
-	Likes         []Like         `json:"likes" gorm:"foreignKey:UserID"`
-	Bookmarks     []Bookmark     `json:"bookmarks" gorm:"foreignKey:UserID"`
+	Profile       Profile        `json:"profile" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Articles      []Article      `json:"-" gorm:"foreignKey:AuthorID"`
+	Notifications []Notification `json:"-" gorm:"foreignKey:UserID"`
+	Comments      []Comment      `json:"-" gorm:"foreignKey:UserID"`
+	Likes         []Like         `json:"-" gorm:"foreignKey:UserID"`
+	Bookmarks     []Bookmark     `json:"-" gorm:"foreignKey:UserID"`
 }
 
 // =======================
@@ -44,7 +44,7 @@ type User struct {
 type Profile struct {
 	ID        uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	UserID    uuid.UUID `json:"user_id" gorm:"type:uuid;unique;not null"`
-	User      *User     `json:"user" gorm:"foreignKey:UserID"`
+	User      *User     `json:"-" gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 	Fullname  string    `json:"fullname" gorm:"not null"`
 	Username  string    `json:"username" gorm:"unique;not null"`
 	Bio       string    `json:"bio"`
@@ -60,17 +60,17 @@ type Profile struct {
 // =======================
 type Article struct {
 	ID         uuid.UUID  `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	AuthorID   uuid.UUID  `json:"author_id" gorm:"type:uuid;not null"`
+	Author     User       `json:"author" gorm:"foreignKey:AuthorID;constraint:OnDelete:CASCADE"`
 	Title      string     `json:"title" gorm:"not null"`
 	Slug       string     `json:"slug" gorm:"not null;unique"`
 	Content    string     `json:"content" gorm:"not null"`
 	Thumbnail  string     `json:"thumbnail"`
-	AuthorID   uuid.UUID  `json:"author_id" gorm:"type:uuid;not null"`
-	Author     User       `json:"author" gorm:"foreignKey:AuthorID"`
 	Status     StatusType `json:"status" gorm:"type:varchar(20);not null;default:'UNPUBLISHED'"`
 	Views      int        `json:"views"`
-	Comments   []Comment  `json:"comments" gorm:"foreignKey:ArticleID"`
-	Likes      []Like     `json:"likes" gorm:"foreignKey:ArticleID"`
-	Bookmarks  []Bookmark `json:"bookmarks" gorm:"foreignKey:ArticleID"`
+	Comments   []Comment  `json:"-" gorm:"foreignKey:ArticleID"`
+	Likes      []Like     `json:"-" gorm:"foreignKey:ArticleID"`
+	Bookmarks  []Bookmark `json:"-" gorm:"foreignKey:ArticleID"`
 	Categories []Category `json:"categories" gorm:"many2many:article_categories"`
 	Tags       []Tag      `json:"tags" gorm:"many2many:article_tags"`
 	CreatedAt  time.Time  `json:"created_at" gorm:"autoCreateTime"`
