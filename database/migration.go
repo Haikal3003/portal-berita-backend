@@ -1,44 +1,39 @@
 package database
 
-// import (
-// 	"log"
-// 	"portal-berita-backend/models"
-// )
+import (
+	"log"
+	"portal-berita-backend/models"
+)
 
-// func AutoMigrateTables() {
-// 	if DB == nil {
-// 		log.Fatal("Database is not connected")
-// 	}
+func AutoMigrateTables() {
+	if DB == nil {
+		log.Fatal("Database not connected")
+	}
 
-// 	errDrop := DB.Migrator().DropTable(
-// 		&models.Bookmark{},
-// 		&models.Like{},
-// 		&models.Comment{},
-// 		&models.Notification{},
-// 		&models.Tag{},
-// 		&models.Category{},
-// 		&models.Article{},
-// 		&models.Profile{},
-// 		&models.User{},
-// 	)
-// 	if errDrop != nil {
-// 		log.Println("Warning: Failed to drop tables:", errDrop)
-// 	}
+	tables := []interface{}{
+		&models.User{},
+		&models.Profile{},
+		&models.Article{},
+		&models.Category{},
+		&models.ArticleCategory{},
+		&models.Tag{},
+		&models.ArticleTag{},
+		&models.Comment{},
+		&models.Notification{},
+	}
 
-// 	errMigrate := DB.AutoMigrate(
-// 		&models.User{},
-// 		&models.Profile{},
-// 		&models.Article{},
-// 		&models.Category{},
-// 		&models.Tag{},
-// 		&models.Notification{},
-// 		&models.Comment{},
-// 		&models.Like{},
-// 		&models.Bookmark{},
-// 	)
-// 	if errMigrate != nil {
-// 		log.Fatal("Failed to migrate database: ", errMigrate)
-// 	}
+	for _, table := range tables {
+		if !DB.Migrator().HasTable(table) {
+			if err := DB.AutoMigrate(table); err != nil {
+				log.Fatalf("Failed to migrate table: %T | Error: %v", table, err)
+			} else {
+				log.Printf("Migrated table: %T\n", table)
+			}
+		} else {
+			log.Printf("ℹTable already exists: %T\n", table)
+		}
+	}
 
-// 	log.Println("✅ Database migrated successfully")
-// }
+	log.Println("Database migration completed successfully")
+
+}

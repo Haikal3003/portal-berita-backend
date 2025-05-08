@@ -16,7 +16,7 @@ func ConnectDatabase() {
 		log.Fatal("DB_DSN environment variable is not set")
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{PrepareStmt: false})
 	if err != nil {
 		log.Fatalf("failed to connect to the database: %v", err)
 	}
