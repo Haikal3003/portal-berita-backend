@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Tag struct {
@@ -15,7 +17,7 @@ type Tag struct {
 }
 
 type ArticleTag struct {
-	ID        int       `json:"id" gorm:"primaryKey;autoIncrement"`
+	ID        uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
 	ArticleID int       `json:"article_id"`
 	TagID     int       `json:"tag_id"`
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
