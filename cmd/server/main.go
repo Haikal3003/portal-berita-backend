@@ -2,14 +2,14 @@ package main
 
 import (
 	"log"
-	"os"
-	"portal-berita-backend/database"
-	"portal-berita-backend/handlers"
-	"portal-berita-backend/routes"
-	"portal-berita-backend/seed"
-	"portal-berita-backend/services"
+	// "os"
+	// "portal-berita-backend/database"
+	// "portal-berita-backend/handlers"
+	// "portal-berita-backend/routes"
+	// "portal-berita-backend/seed"
+	// "portal-berita-backend/services"
 
-	"github.com/gofiber/fiber/v2"
+	// "github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 )
 
@@ -21,23 +21,23 @@ func main() {
 
 	// log.Println("DB_DSN:", os.Getenv("DB_DSN"))
 
-	database.ConnectDatabase()
-	database.AutoMigrateTables()
-	seed.SetupAdmin()
+	// database.ConnectDatabase()
+	// database.AutoMigrateTables()
+	// seed.SetupAdmin()
 
-	app := fiber.New()
+	// app := fiber.New()
 
 	// init service dan handler
-	authService := services.NewAuthService(database.DB)
-	authHandler := handlers.NewAuthHandler(authService)
+	// authService := services.NewAuthService(database.DB)
+	// authHandler := handlers.NewAuthHandler(authService)
 
-	profileService := services.NewProfileService(database.DB)
-	profileHandler := handlers.NewProfileHandler(profileService)
+	// profileService := services.NewProfileService(database.DB)
+	// profileHandler := handlers.NewProfileHandler(profileService)
 
 	// init routes
-	api := app.Group("/api")
-	routes.AuthRoutes(api, authHandler)
-	routes.ProfileRoutes(api, profileHandler)
+	// api := app.Group("/api")
+	// routes.AuthRoutes(api, authHandler)
+	// routes.ProfileRoutes(api, profileHandler)
 
-	app.Listen(":" + os.Getenv("PORT"))
+	// app.Listen(":" + os.Getenv("PORT"))
 }
