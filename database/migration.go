@@ -10,28 +10,19 @@ func AutoMigrateTables() {
 		log.Fatal("Database not connected")
 	}
 
-	tables := []interface{}{
+	errMigrate := DB.AutoMigrate(
 		&models.User{},
 		&models.Profile{},
 		&models.Article{},
+		&models.SavedArticle{},
 		&models.Category{},
-		&models.ArticleCategory{},
 		&models.Tag{},
-		&models.ArticleTag{},
 		&models.Comment{},
 		&models.Notification{},
-	}
+	)
 
-	for _, table := range tables {
-		if !DB.Migrator().HasTable(table) {
-			if err := DB.AutoMigrate(table); err != nil {
-				log.Fatalf("Failed to migrate table: %T | Error: %v", table, err)
-			} else {
-				log.Printf("Migrated table: %T\n", table)
-			}
-		} else {
-			log.Printf("ℹTable already exists: %T\n", table)
-		}
+	if errMigrate != nil {
+		log.Fatal("migration fail")
 	}
 
 	log.Println("Database migration completed successfully")
