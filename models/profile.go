@@ -13,7 +13,7 @@ type Profile struct {
 	Image     string     `json:"image"`
 	Address   string     `json:"address"`
 	BirthDate *time.Time `json:"birth_date"`
-	User      User       `json:"user" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	User      User       `json:"-" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CreatedAt time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 }

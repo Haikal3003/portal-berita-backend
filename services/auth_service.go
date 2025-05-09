@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"portal-berita-backend/models"
 
 	"golang.org/x/crypto/bcrypt"
@@ -52,4 +53,25 @@ func (s *AuthService) Login(email, password string) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (s *AuthService) ChangePassword(userID, oldPassword, newPassword string) error {
+	user := &models.User{}
+
+	if err := s.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		return errors.New("old password is incorrect")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.Password = string(hashedPassword)
+
+	return s.DB.Save(user).Error
 }
