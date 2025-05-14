@@ -2,7 +2,8 @@ package services
 
 import (
 	"portal-berita-backend/models"
-	"strings"
+
+	"github.com/gosimple/slug"
 
 	"gorm.io/gorm"
 )
@@ -19,65 +20,62 @@ func NewArticleService(db *gorm.DB) *ArticleService {
 
 func (s *ArticleService) GetArticles() ([]models.Article, error) {
 	var articles []models.Article
-	err := s.DB.Preload("Author.Profile").Preload("Categories").Preload("Tags").Find(&articles).Error
-	return articles, err
+	if err := s.DB.Preload("Author").Preload("Category").Preload("Tags").Preload("Comments").Find(&articles).Error; err != nil {
+		return nil, err
+	}
+
+	return articles, nil
 }
 
-func (s *ArticleService) GetArticleByID(id string) (*models.Article, error) {
-	var article models.Article
-	err := s.DB.Preload("Author.Profile").Preload("Categories").Preload("Tags").First(&article, "id = ?", id).Error
-	return &article, err
+func (s *ArticleService) GetArticleByID(articleID string) (*models.Article, error) {
+	article := &models.Article{}
+	if err := s.DB.Preload("Author").Preload("Category").Preload("Tags").Preload("Comments").Where("id = ?", articleID).First(&article).Error; err != nil {
+		return nil, err
+	}
+	return article, nil
 }
 
-func (s *ArticleService) CreateArticle(article *models.Article) error {
+func (s *ArticleService) CreateArticle(article *models.Article) (*models.Article, error) {
 	if err := s.DB.Create(article).Error; err != nil {
-		return err
-	}
-	return s.DB.Preload("Author.Profile").First(article, article.ID).Error
-}
-
-func (s *ArticleService) UpdateArticle(id string, updated *models.Article) error {
-	var article models.Article
-	if err := s.DB.First(&article, "id = ?", id).Error; err != nil {
-		return err
+		return nil, err
 	}
 
-	updated.ID = article.ID
-	return s.DB.Model(&article).Updates(updated).Error
-}
-
-func (s *ArticleService) DeleteArticle(id string) error {
-	return s.DB.Delete(&models.Article{}, "id = ?", id).Error
-}
-
-func (s *ArticleService) GetArticlesByCategory(categoryID string) ([]models.Article, error) {
-	var articles []models.Article
-	err := s.DB.Joins("JOIN article_categories ON article_categories.article_id = articles.id").
-		Where("article_categories.category_id = ?", categoryID).
-		Preload("Author.Profile").
-		Preload("Categories").
+	if err := s.DB.Preload("Author.Profile").
+		Preload("Category").
 		Preload("Tags").
-		Find(&articles).Error
-	return articles, err
+		Preload("Comments").
+		Where("id = ?", article.ID).
+		First(article).Error; err != nil {
+		return nil, err
+	}
+
+	return article, nil
 }
 
-func (s *ArticleService) GetArticlesByTag(tagID string) ([]models.Article, error) {
-	var articles []models.Article
-	err := s.DB.Joins("JOIN article_tags ON article_tags.article_id = articles.id").
-		Where("article_tags.tag_id = ?", tagID).
-		Preload("Author.Profile").
-		Preload("Categories").
-		Preload("Tags").
-		Find(&articles).Error
-	return articles, err
+func (s *ArticleService) UpdateArticle(authorID string, updatedArticle *models.Article) (*models.Article, error) {
+	article := &models.Article{}
+
+	if err := s.DB.Where("author_id = ?", authorID).First(&article).Error; err != nil {
+		return nil, err
+	}
+
+	updatedArticle.Title = article.Title
+	updatedArticle.Slug = slug.Make(updatedArticle.Title)
+	updatedArticle.Content = article.Content
+	updatedArticle.Thumbnail = article.Thumbnail
+
+	if err := s.DB.Save(article).Error; err != nil {
+		return nil, err
+	}
+
+	return article, nil
+
 }
 
-func (s *ArticleService) SearchArticles(keyword string) ([]models.Article, error) {
-	var articles []models.Article
-	err := s.DB.Where("LOWER(title) ILIKE ?", "%"+strings.ToLower(keyword)+"%").
-		Preload("Author.Profile").
-		Preload("Categories").
-		Preload("Tags").
-		Find(&articles).Error
-	return articles, err
+func (s *ArticleService) DeleteArticle(articleID string) error {
+	if err := s.DB.Delete(&models.Article{}, articleID).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

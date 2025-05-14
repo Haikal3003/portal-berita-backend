@@ -5,127 +5,130 @@ import (
 	"portal-berita-backend/services"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gosimple/slug"
 )
 
 type ArticleHandler struct {
-	ArticleService *services.ArticleService
+	ArticleService  *services.ArticleService
+	CategoryService *services.CategoryService
+	TagService      *services.TagService
 }
 
-func NewArticleHandler(articleService *services.ArticleService) *ArticleHandler {
+func NewArticleHandler(articleService *services.ArticleService, categoryService *services.CategoryService, tagService *services.TagService) *ArticleHandler {
 	return &ArticleHandler{
-		ArticleService: articleService,
+		ArticleService:  articleService,
+		CategoryService: categoryService,
+		TagService:      tagService,
 	}
 }
 
 func (h *ArticleHandler) GetAllArticles(c *fiber.Ctx) error {
-	articles, err := h.ArticleService.GetArticles()
+	users, err := h.ArticleService.GetArticles()
+
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch articles",
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to get article data",
+			"error":   err.Error(),
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(articles)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": users,
+	})
+
 }
 
 func (h *ArticleHandler) GetArticleByID(c *fiber.Ctx) error {
-	id := c.Params("id")
-	article, err := h.ArticleService.GetArticleByID(id)
+	articleID := c.Params("id")
+	article, err := h.ArticleService.GetArticleByID(articleID)
+
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Article not found",
+			"message": "article with ID: " + articleID + " not found!",
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(article)
-}
-
-func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
-	var article models.Article
-	if err := c.BodyParser(&article); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	if err := h.ArticleService.CreateArticle(&article); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create article",
-		})
-	}
-
-	return c.Status(fiber.StatusCreated).JSON(article)
-}
-
-func (h *ArticleHandler) UpdateArticle(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var updatedArticle models.Article
-	if err := c.BodyParser(&updatedArticle); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	if err := h.ArticleService.UpdateArticle(id, &updatedArticle); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update article",
-		})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(updatedArticle)
-
-}
-
-func (h *ArticleHandler) DeleteArticle(c *fiber.Ctx) error {
-	id := c.Params("id")
-	if err := h.ArticleService.DeleteArticle(id); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to delete article",
-		})
-	}
-
-	return c.Status(fiber.StatusNoContent).JSON(fiber.Map{
-		"message": "Article deleted successfully",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": article,
 	})
 }
 
-func (h *ArticleHandler) GetArticlesByCategory(c *fiber.Ctx) error {
-	categoryID := c.Params("category_id")
-	articles, err := h.ArticleService.GetArticlesByCategory(categoryID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch articles",
-		})
+func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
+	type ArticleRequest struct {
+		Title     string          `json:"title" validate:"required"`
+		Content   string          `json:"content" validate:"required"`
+		Thumbnail string          `json:"thumbnail"`
+		Category  models.Category `json:"category"`
+		Tags      []models.Tag    `json:"tags"`
 	}
 
-	return c.Status(fiber.StatusOK).JSON(articles)
-}
-
-func (h *ArticleHandler) GetArticlesByTag(c *fiber.Ctx) error {
-	tagID := c.Params("tag_id")
-	articles, err := h.ArticleService.GetArticlesByTag(tagID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch articles",
-		})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(articles)
-}
-
-func (h *ArticleHandler) SearchArticles(c *fiber.Ctx) error {
-	keyword := c.Query("query")
-
-	if keyword == "" {
+	var req ArticleRequest
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Keyword is required",
+			"message": "Invalid Input",
+			"error":   err.Error(),
 		})
 	}
 
-	articles, err := h.ArticleService.SearchArticles(keyword)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	authorID := c.Locals("userID")
+	if authorID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(articles)
+	category, err := h.CategoryService.FindOrCreateCategory(req.Category.Name)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to process category",
+			"error":   err.Error(),
+		})
+	}
+
+	tags, err := h.TagService.FindOrCreateTags(req.Tags)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to process tags",
+			"error":   err.Error(),
+		})
+	}
+
+	article := models.Article{
+		Title:      req.Title,
+		Slug:       slug.Make(req.Title),
+		Content:    req.Content,
+		Thumbnail:  req.Thumbnail,
+		CategoryID: category.ID,
+		AuthorID:   authorID.(string),
+		Tags:       tags,
+	}
+
+	createdArticle, err := h.ArticleService.CreateArticle(&article)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to create article",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Article created successfully",
+		"data":    createdArticle,
+	})
+
+}
+
+func (h *ArticleHandler) DeleteArticleByID(c *fiber.Ctx) error {
+	articleID := c.Params("id")
+
+	if err := h.ArticleService.DeleteArticle(articleID); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Failed to delete article",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Delete article with ID: " + articleID + " successfully !",
+	})
 }

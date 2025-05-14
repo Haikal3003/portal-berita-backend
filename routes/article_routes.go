@@ -8,14 +8,9 @@ import (
 )
 
 func ArticleRoutes(router fiber.Router, articleHandler *handlers.ArticleHandler) {
-	article := router.Group("/articles", middlewares.JwtMiddleware())
+	articleRoute := router.Group("/articles", middlewares.JwtMiddleware())
 
-	article.Get("/", articleHandler.GetAllArticles)
-	article.Get("/:id", articleHandler.GetArticleByID)
-	article.Post("/", articleHandler.CreateArticle)
-	article.Put("/:id", articleHandler.UpdateArticle)
-	article.Delete("/:id", articleHandler.DeleteArticle)
-	article.Get("/category/:categoryID", articleHandler.GetArticlesByCategory)
-	article.Get("/tag/:tagID", articleHandler.GetArticlesByTag)
-	article.Get("/search?query=:query", articleHandler.SearchArticles)
+	articleRoute.Get("/", articleHandler.GetAllArticles)
+	articleRoute.Get("/:id", articleHandler.GetArticleByID)
+	articleRoute.Post("/", articleHandler.CreateArticle)
 }

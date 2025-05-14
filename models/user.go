@@ -16,7 +16,7 @@ type User struct {
 	Email         string         `json:"email" gorm:"uniqueIndex;not null"`
 	Password      string         `json:"password" gorm:"not null"`
 	Role          RoleType       `json:"role" gorm:"type:VARCHAR(10);default:'USER'"`
-	Profile       *Profile       `json:"profile" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Profile       *Profile       `json:"profile" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Articles      []Article      `json:"articles" gorm:"foreignKey:AuthorID"`
 	Saved         []SavedArticle `json:"saved_articles" gorm:"foreignKey:UserID"`
 	Notifications []Notification `json:"notifications" gorm:"foreignKey:UserID"`

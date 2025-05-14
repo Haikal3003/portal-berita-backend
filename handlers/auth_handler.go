@@ -84,7 +84,7 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
 
 	type ChangePasswordInput struct {
-		OldPassword string `json:"oldPassword"`
+		OldPassword string `json:"old_password"`
 		NewPassword string `json:"new_password"`
 	}
 
