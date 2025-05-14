@@ -1,44 +1,42 @@
 package database
 
-// import (
-// 	"log"
-// 	"portal-berita-backend/models"
-// )
+import (
+	"log"
+	"strings"
 
-// func AutoMigrateTables() {
-// 	if DB == nil {
-// 		log.Fatal("Database is not connected")
-// 	}
+	"portal-berita-backend/models"
+)
 
-// 	errDrop := DB.Migrator().DropTable(
-// 		&models.Bookmark{},
-// 		&models.Like{},
-// 		&models.Comment{},
-// 		&models.Notification{},
-// 		&models.Tag{},
-// 		&models.Category{},
-// 		&models.Article{},
-// 		&models.Profile{},
-// 		&models.User{},
-// 	)
-// 	if errDrop != nil {
-// 		log.Println("Warning: Failed to drop tables:", errDrop)
-// 	}
+func AutoMigrateTables() {
+	if DB == nil {
+		log.Fatal("Database not connected")
+	}
 
-// 	errMigrate := DB.AutoMigrate(
-// 		&models.User{},
-// 		&models.Profile{},
-// 		&models.Article{},
-// 		&models.Category{},
-// 		&models.Tag{},
-// 		&models.Notification{},
-// 		&models.Comment{},
-// 		&models.Like{},
-// 		&models.Bookmark{},
-// 	)
-// 	if errMigrate != nil {
-// 		log.Fatal("Failed to migrate database: ", errMigrate)
-// 	}
+	if err := DB.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; err != nil {
+		log.Fatalf("Failed to create uuid extension: %v", err)
+	}
 
-// 	log.Println("✅ Database migrated successfully")
-// }
+	err := DB.AutoMigrate(
+		&models.User{},
+		&models.Profile{},
+		&models.Article{},
+		&models.SavedArticle{},
+		&models.Category{},
+		&models.Tag{},
+		&models.Comment{},
+		&models.Notification{},
+	)
+
+	if err != nil {
+		// Tangani error spesifik
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println("Table already exists, skipping migration.")
+		} else if strings.Contains(err.Error(), "prepared statement") {
+			log.Println("Prepared statement already exists. Consider disabling statement cache or resetting connection.")
+		} else {
+			log.Fatalf("Migration failed: %v", err)
+		}
+	} else {
+		log.Println("Database migration completed successfully.")
+	}
+}
