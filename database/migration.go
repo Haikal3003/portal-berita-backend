@@ -12,8 +12,6 @@ func AutoMigrateTables() {
 	}
 
 	errDrop := DB.Migrator().DropTable(
-		&models.Bookmark{},
-		&models.Like{},
 		&models.Comment{},
 		&models.Notification{},
 		&models.Tag{},
@@ -26,7 +24,7 @@ func AutoMigrateTables() {
 		log.Println("Warning: Failed to drop tables:", errDrop)
 	}
 
-	err := DB.AutoMigrate(
+	errMigrate := DB.AutoMigrate(
 		&models.User{},
 		&models.Profile{},
 		&models.Article{},
@@ -36,9 +34,8 @@ func AutoMigrateTables() {
 		&models.Comment{},
 		&models.Notification{},
 		&models.Comment{},
-		&models.Like{},
-		&models.Bookmark{},
 	)
+
 	if errMigrate != nil {
 		log.Fatal("Failed to migrate database: ", errMigrate)
 	}
