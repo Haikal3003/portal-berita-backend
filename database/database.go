@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
@@ -16,13 +17,18 @@ func ConnectDatabase() {
 		log.Fatal("DB_DSN environment variable is not set")
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{PrepareStmt: false})
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // ⛔ Hindari prepared statement error
+	}), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+		// PrepareStmt: false, // optional, bisa dihapus karena PreferSimpleProtocol sudah cukup
+	})
 	if err != nil {
 		log.Fatalf("failed to connect to the database: %v", err)
 	}
 
 	DB = db
 
-	log.Println("Database connected successfully")
-
+	log.Println("✅ Database connected successfully")
 }
