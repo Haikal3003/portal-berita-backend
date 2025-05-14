@@ -32,7 +32,7 @@ func SetupAdmin() {
 		Email:    os.Getenv("ADMIN_EMAIL"),
 		Password: string(hashedPassword),
 		Role:     models.RoleAdmin,
-		Profile: models.Profile{
+		Profile: &models.Profile{
 			Fullname: os.Getenv("ADMIN_FULLNAME"),
 			Username: os.Getenv("ADMIN_USERNAME"),
 		},

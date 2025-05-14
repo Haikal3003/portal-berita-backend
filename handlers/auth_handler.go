@@ -65,7 +65,7 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := utils.GenerateToken(user.ID.String())
+	token, err := utils.GenerateToken(user.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate token",
@@ -78,5 +78,33 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 		"user":    user,
 		"token":   token,
 		"message": "Login successful",
+	})
+}
+
+func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
+
+	type ChangePasswordInput struct {
+		OldPassword string `json:"oldPassword"`
+		NewPassword string `json:"new_password"`
+	}
+
+	var input ChangePasswordInput
+
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	userID := c.Locals("userID").(string)
+
+	if err := h.AuthService.ChangePassword(userID, input.OldPassword, input.NewPassword); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Change password successfully!",
 	})
 }

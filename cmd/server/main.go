@@ -19,7 +19,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// log.Println("DB_DSN:", os.Getenv("DB_DSN"))
+	log.Println("DB_DSN:", os.Getenv("DB_DSN"))
 
 	database.ConnectDatabase()
 	database.AutoMigrateTables()
@@ -31,8 +31,8 @@ func main() {
 	authService := services.NewAuthService(database.DB)
 	authHandler := handlers.NewAuthHandler(authService)
 
-	profileService := services.NewProfileService(database.DB)
-	profileHandler := handlers.NewProfileHandler(profileService)
+	userService := services.NewUserService(database.DB)
+	userHandler := handlers.NewUserHandler(userService)
 
 	articleService := services.NewArticleService(database.DB)
 	articleHandler := handlers.NewArticleHandler(articleService)
@@ -40,8 +40,12 @@ func main() {
 	// init routes
 	api := app.Group("/api")
 	routes.AuthRoutes(api, authHandler)
+<<<<<<< HEAD
 	routes.ProfileRoutes(api, profileHandler)
 	routes.ArticleRoutes(api, articleHandler)
+=======
+	routes.UserRoutes(api, userHandler)
+>>>>>>> f7757e78e15bac05ea35d7d2c9ac267aa5db3a4b
 
 	app.Listen(":" + os.Getenv("PORT"))
 }
