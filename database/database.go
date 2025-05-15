@@ -19,10 +19,9 @@ func ConnectDatabase() {
 
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
-		PreferSimpleProtocol: true, // ⛔ Hindari prepared statement error
+		PreferSimpleProtocol: true, 
 	}), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
-		// PrepareStmt: false, // optional, bisa dihapus karena PreferSimpleProtocol sudah cukup
 	})
 	if err != nil {
 		log.Fatalf("failed to connect to the database: %v", err)
@@ -30,5 +29,5 @@ func ConnectDatabase() {
 
 	DB = db
 
-	log.Println("✅ Database connected successfully")
+	log.Println("Database connected successfully")
 }
