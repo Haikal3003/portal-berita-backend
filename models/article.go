@@ -20,11 +20,11 @@ type Article struct {
 	Content    string     `json:"content" gorm:"not null"`
 	Thumbnail  string     `json:"thumbnail"`
 	AuthorID   string     `json:"author_id" gorm:"type:uuid;not null"`
-	Author     User       `json:"author" gorm:"foreignKey:AuthorID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Author     User       `json:"author" gorm:"foreignKey:AuthorID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	Status     StatusType `json:"status" gorm:"type:VARCHAR(20);default:'DRAFT'"`
 	Views      int        `json:"views" gorm:"default:0"`
 	CategoryID int        `json:"category_id" gorm:"not null"`
-	Category   Category   `json:"category" gorm:"foreignKey:CategoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Category   Category   `json:"category" gorm:"foreignKey:CategoryID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	Tags       []Tag      `json:"tags" gorm:"many2many:article_tags"`
 	Comments   []Comment  `json:"comments" gorm:"foreignKey:ArticleID"`
 	CreatedAt  time.Time  `json:"created_at" gorm:"autoCreateTime"`

@@ -11,5 +11,5 @@ type Category struct {
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
-	Articles []Article `json:"articles" gorm:"many2many:article_categories"`
+	Articles []Article `json:"articles" gorm:"foreignKey:CategoryID"`
 }

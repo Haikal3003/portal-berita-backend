@@ -18,7 +18,12 @@ func NewUserService(db *gorm.DB) *UserService {
 
 func (s *UserService) GetUsers() ([]models.User, error) {
 	var users []models.User
-	if err := s.DB.Preload("profile").Find(&users).Error; err != nil {
+	if err := s.DB.Preload("Profile").
+		Preload("Articles").
+		Preload("Saved").
+		Preload("Notifications").
+		Preload("Comments").
+		Find(&users).Error; err != nil {
 		return nil, err
 	}
 
@@ -27,7 +32,11 @@ func (s *UserService) GetUsers() ([]models.User, error) {
 
 func (s *UserService) GetUserByID(userID string) (*models.User, error) {
 	user := &models.User{}
-	if err := s.DB.Preload("profile").First(&user).Error; err != nil {
+	if err := s.DB.Preload("Profile").
+		Preload("Articles").
+		Preload("Saved").
+		Preload("Notifications").
+		Preload("Comments").Where("id = ?", userID).First(&user).Error; err != nil {
 		return nil, err
 	}
 
@@ -36,14 +45,18 @@ func (s *UserService) GetUserByID(userID string) (*models.User, error) {
 
 func (s *UserService) GetUsersByRole(role string) ([]models.User, error) {
 	var users []models.User
-	if err := s.DB.Preload("Profile").Where("role = ?", role).Find(&users).Error; err != nil {
+	if err := s.DB.Preload("Profile").
+		Preload("Articles").
+		Preload("Saved").
+		Preload("Notifications").
+		Preload("Comments").Where("role = ?", role).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
 func (s *UserService) UpdateUserProfile(userID string, updatedProfile *models.Profile) (*models.Profile, error) {
-	var profile models.Profile
+	profile := &models.Profile{}
 
 	if err := s.DB.Where("user_id = ?", userID).First(&profile).Error; err != nil {
 		return nil, err
@@ -60,5 +73,5 @@ func (s *UserService) UpdateUserProfile(userID string, updatedProfile *models.Pr
 		return nil, err
 	}
 
-	return &profile, nil
+	return profile, nil
 }

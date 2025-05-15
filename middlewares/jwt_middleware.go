@@ -18,7 +18,10 @@ func JwtMiddleware() fiber.Handler {
 
 			claims := token.Claims.(jwt.MapClaims)
 			userID := claims["sub"].(string)
+			role := claims["role"].(string)
+
 			c.Locals("userID", userID)
+			c.Locals("role", role)
 
 			return c.Next()
 		},

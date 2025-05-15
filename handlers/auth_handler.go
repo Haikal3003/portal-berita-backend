@@ -65,7 +65,7 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := utils.GenerateToken(user.ID)
+	token, err := utils.GenerateToken(user.ID, string(user.Role))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate token",
@@ -84,7 +84,7 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
 
 	type ChangePasswordInput struct {
-		OldPassword string `json:"oldPassword"`
+		OldPassword string `json:"old_password"`
 		NewPassword string `json:"new_password"`
 	}
 

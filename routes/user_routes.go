@@ -12,5 +12,5 @@ func UserRoutes(router fiber.Router, userHandler *handlers.UserHandler) {
 
 	userRoute.Get("/", userHandler.GetAllUsers)
 	userRoute.Get("/:id", userHandler.GetUserById)
-	userRoute.Put("/update-profile", userHandler.UpdateProfile)
+	userRoute.Post("/update-profile", userHandler.UpdateProfile)
 }

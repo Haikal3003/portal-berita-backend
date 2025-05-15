@@ -2,7 +2,6 @@ package database
 
 import (
 	"log"
-	"strings"
 
 	"portal-berita-backend/models"
 )
@@ -12,11 +11,7 @@ func AutoMigrateTables() {
 		log.Fatal("Database not connected")
 	}
 
-	if err := DB.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; err != nil {
-		log.Fatalf("Failed to create uuid extension: %v", err)
-	}
-
-	err := DB.AutoMigrate(
+	if err := DB.AutoMigrate(
 		&models.User{},
 		&models.Profile{},
 		&models.Article{},
@@ -25,18 +20,10 @@ func AutoMigrateTables() {
 		&models.Tag{},
 		&models.Comment{},
 		&models.Notification{},
-	)
-
-	if err != nil {
-		// Tangani error spesifik
-		if strings.Contains(err.Error(), "already exists") {
-			log.Println("Table already exists, skipping migration.")
-		} else if strings.Contains(err.Error(), "prepared statement") {
-			log.Println("Prepared statement already exists. Consider disabling statement cache or resetting connection.")
-		} else {
-			log.Fatalf("Migration failed: %v", err)
-		}
+	); err != nil {
+		log.Fatalf("❌ AutoMigrate failed: %v", err)
 	} else {
-		log.Println("Database migration completed successfully.")
+		log.Println("✅ All tables migrated successfully")
 	}
+
 }
