@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"portal-berita-backend/models"
 
 	"github.com/gosimple/slug"
@@ -52,10 +53,10 @@ func (s *ArticleService) CreateArticle(article *models.Article) (*models.Article
 	return article, nil
 }
 
-func (s *ArticleService) UpdateArticle(authorID string, updatedArticle *models.Article) (*models.Article, error) {
+func (s *ArticleService) UpdateArticleById(articleID string, updatedArticle *models.Article) (*models.Article, error) {
 	article := &models.Article{}
 
-	if err := s.DB.Where("author_id = ?", authorID).First(&article).Error; err != nil {
+	if err := s.DB.Where("id = ?", articleID).First(&article).Error; err != nil {
 		return nil, err
 	}
 
@@ -74,6 +75,51 @@ func (s *ArticleService) UpdateArticle(authorID string, updatedArticle *models.A
 
 func (s *ArticleService) DeleteArticle(articleID string) error {
 	if err := s.DB.Delete(&models.Article{}, articleID).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ArticleService) FindArticlesByCategory(name string) (*models.Category, error) {
+	category := &models.Category{}
+
+	if err := s.DB.Preload("Articles").Preload("Articles.Author.Profile").Where("LOWER(name) = LOWER(?)", name).First(category).Error; err != nil {
+		return nil, err
+	}
+
+	return category, nil
+}
+
+func (s *ArticleService) FindArticlesByTag(name string) ([]models.Article, error) {
+	var tag models.Tag
+
+	err := s.DB.Preload("Articles.Tags").
+		Preload("Articles.Author").
+		Preload("Articles.Category").
+		Where("name = ?", name).
+		First(&tag).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("tag not found")
+		}
+		return nil, err
+	}
+
+	return tag.Articles, nil
+}
+
+func (s *ArticleService) PublishArticle(articleID string) error {
+	article := &models.Article{}
+
+	if err := s.DB.Where("id = ?", articleID).First(&article).Error; err != nil {
+		return err
+	}
+
+	article.Status = models.StatusPublished
+
+	if err := s.DB.Save(&article).Error; err != nil {
 		return err
 	}
 

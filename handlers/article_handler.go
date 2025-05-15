@@ -22,6 +22,15 @@ func NewArticleHandler(articleService *services.ArticleService, categoryService 
 	}
 }
 
+type ArticleRequest struct {
+	Title     string          `json:"title" validate:"required"`
+	Content   string          `json:"content" validate:"required"`
+	Thumbnail string          `json:"thumbnail"`
+	Category  models.Category `json:"category"`
+	Tags      []models.Tag    `json:"tags"`
+}
+
+// GET ALL ARTICLE
 func (h *ArticleHandler) GetAllArticles(c *fiber.Ctx) error {
 	users, err := h.ArticleService.GetArticles()
 
@@ -38,6 +47,7 @@ func (h *ArticleHandler) GetAllArticles(c *fiber.Ctx) error {
 
 }
 
+// GET ARTICLE BY ID
 func (h *ArticleHandler) GetArticleByID(c *fiber.Ctx) error {
 	articleID := c.Params("id")
 	article, err := h.ArticleService.GetArticleByID(articleID)
@@ -53,14 +63,8 @@ func (h *ArticleHandler) GetArticleByID(c *fiber.Ctx) error {
 	})
 }
 
+// CREATE ARTICLE
 func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
-	type ArticleRequest struct {
-		Title     string          `json:"title" validate:"required"`
-		Content   string          `json:"content" validate:"required"`
-		Thumbnail string          `json:"thumbnail"`
-		Category  models.Category `json:"category"`
-		Tags      []models.Tag    `json:"tags"`
-	}
 
 	var req ArticleRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -118,6 +122,76 @@ func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
 
 }
 
+// UPDATE ARTICLE
+func (h *ArticleHandler) UpdateArticle(c *fiber.Ctx) error {
+	articleID := c.Params("id")
+	if articleID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Article ID is required",
+		})
+	}
+
+	var req ArticleRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid input",
+			"error":   err.Error(),
+		})
+	}
+
+	article := &models.Article{}
+	if err := h.CategoryService.DB.Preload("Tags").Preload("Category").Where("id = ?", articleID).First(&article).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Article not found",
+		})
+	}
+
+	article.Title = req.Title
+	article.Slug = slug.Make(req.Title)
+	article.Content = req.Content
+	article.Thumbnail = req.Thumbnail
+
+	if req.Category.Name != "" {
+		category, err := h.CategoryService.FindOrCreateCategory(req.Category.Name)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to update category",
+				"error":   err.Error(),
+			})
+		}
+		article.CategoryID = category.ID
+	}
+
+	if len(req.Tags) > 0 {
+		tags, err := h.TagService.FindOrCreateTags(req.Tags)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to update tags",
+				"error":   err.Error(),
+			})
+		}
+		if err := h.TagService.DB.Model(&article).Association("Tags").Replace(tags); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to replace article tags",
+				"error":   err.Error(),
+			})
+		}
+	}
+
+	if err := h.ArticleService.DB.Save(article).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to update article",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Article updated successfully",
+		"data":    article,
+	})
+}
+
+// DELETE
 func (h *ArticleHandler) DeleteArticleByID(c *fiber.Ctx) error {
 	articleID := c.Params("id")
 
@@ -131,4 +205,56 @@ func (h *ArticleHandler) DeleteArticleByID(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Delete article with ID: " + articleID + " successfully !",
 	})
+}
+
+// GET ARTICLE BY CATEGORY
+func (h *ArticleHandler) GetArticlesByCategory(c *fiber.Ctx) error {
+	categoryName := c.Params("name")
+
+	articles, err := h.ArticleService.FindArticlesByCategory(categoryName)
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Articles with category " + categoryName + " not found",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": articles,
+	})
+
+}
+
+// GET ARTICLE BY TAG
+func (h *ArticleHandler) GetArticlesByTag(c *fiber.Ctx) error {
+	tagName := c.Params("name")
+
+	articles, err := h.ArticleService.FindArticlesByTag(tagName)
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Article with tag " + tagName + " not found",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": articles,
+	})
+}
+
+// PUBLISH ARTICLE
+func (h *ArticleHandler) PublishArticle(c *fiber.Ctx) error {
+	articleID := c.Params("id")
+
+	if err := h.ArticleService.PublishArticle(articleID); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Article not found",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Article published successfully",
+	})
+
 }

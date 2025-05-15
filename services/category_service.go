@@ -17,7 +17,7 @@ func NewCategoryService(db *gorm.DB) *CategoryService {
 
 func (s *CategoryService) FindOrCreateCategory(name string) (models.Category, error) {
 	var category models.Category
-	if err := s.DB.Where("name = ?", name).First(&category).Error; err != nil {
+	if err := s.DB.Where("LOWER(name) = LOWER(?)", name).First(&category).Error; err != nil {
 		category = models.Category{
 			Name: name,
 			Slug: slug.Make(name),
