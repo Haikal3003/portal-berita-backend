@@ -125,3 +125,46 @@ func (s *ArticleService) PublishArticle(articleID string) error {
 
 	return nil
 }
+
+func (s *ArticleService) GetSavedArticle(userID string) ([]models.SavedArticle, error) {
+	var savedArticles []models.SavedArticle
+
+	if err := s.DB.
+		Where("user_id = ?", userID).
+		Preload("Article.Author").
+		Preload("Article.Category").
+		Preload("Article.Tags").
+		Find(&savedArticles).Error; err != nil {
+		return nil, err
+	}
+
+	return savedArticles, nil
+}
+
+func (s *ArticleService) SaveArticle(userID, articleID string, role models.RoleType) error {
+	if role != models.RoleUser {
+		return errors.New("Only user can save article")
+	}
+
+	var article models.Article
+	if err := s.DB.Where("id = ?", articleID).First(&article).Error; err != nil {
+		return errors.New("Article not found")
+	}
+
+	var existing models.SavedArticle
+	if err := s.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&existing).Error; err != nil {
+		return errors.New("Article already saved")
+	}
+
+	savedArticle := models.SavedArticle{
+		UserID:    userID,
+		ArticleID: articleID,
+	}
+
+	if err := s.DB.Create(&savedArticle).Error; err != nil {
+		return errors.New("Failed to save article")
+	}
+
+	return nil
+
+}

@@ -258,3 +258,40 @@ func (h *ArticleHandler) PublishArticle(c *fiber.Ctx) error {
 	})
 
 }
+
+// SAVE ARTICLE FOR USER
+func (h *ArticleHandler) SaveArticle(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	articleID := c.Params("id")
+	userRole := c.Locals("role")
+
+	role := models.RoleType(userRole.(string))
+
+	if err := h.ArticleService.SaveArticle(userID, articleID, role); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Article saved successfully",
+	})
+}
+
+// GET SAVED ARTICLES
+func (h *ArticleHandler) GetSavedArticles(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	savedArticles, err := h.ArticleService.GetSavedArticle(userID)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to get saved articles",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": savedArticles,
+	})
+}

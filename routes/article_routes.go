@@ -14,6 +14,12 @@ func ArticleRoutes(router fiber.Router, articleHandler *handlers.ArticleHandler)
 	articleRoute.Get("/:id", articleHandler.GetArticleByID)
 	articleRoute.Get("/category/:name", articleHandler.GetArticlesByCategory)
 	articleRoute.Get("/tag/:name", articleHandler.GetArticlesByTag)
+	articleRoute.Get("/saved-articles", articleHandler.GetSavedArticles)
+
 	articleRoute.Post("/", articleHandler.CreateArticle)
+	articleRoute.Post("/:id/save", articleHandler.SaveArticle)
+
 	articleRoute.Put("/:id/publish", articleHandler.PublishArticle)
+	articleRoute.Put("/:id/update-article", articleHandler.UpdateArticle)
+
 }
