@@ -168,3 +168,19 @@ func (s *ArticleService) SaveArticle(userID, articleID string, role models.RoleT
 	return nil
 
 }
+
+func (s *ArticleService) IncrementArticleView(articleID string) error {
+	article := &models.Article{}
+
+	if err := s.DB.Where("id : ?", articleID).First(&article).Error; err != nil {
+		return err
+	}
+
+	article.Views += 1
+
+	if err := s.DB.Save(&article).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
