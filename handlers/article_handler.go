@@ -50,6 +50,14 @@ func (h *ArticleHandler) GetAllArticles(c *fiber.Ctx) error {
 // GET ARTICLE BY ID
 func (h *ArticleHandler) GetArticleByID(c *fiber.Ctx) error {
 	articleID := c.Params("id")
+
+	if err := h.ArticleService.IncrementArticleView(articleID); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to increment view",
+			"error":   err.Error(),
+		})
+	}
+
 	article, err := h.ArticleService.GetArticleByID(articleID)
 
 	if err != nil {
