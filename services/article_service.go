@@ -152,8 +152,11 @@ func (s *ArticleService) SaveArticle(userID, articleID string, role models.RoleT
 	}
 
 	var existing models.SavedArticle
-	if err := s.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&existing).Error; err != nil {
+	err := s.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&existing).Error
+	if err == nil {
 		return errors.New("article already saved")
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return errors.New("failed to check saved article")
 	}
 
 	savedArticle := models.SavedArticle{
@@ -166,13 +169,12 @@ func (s *ArticleService) SaveArticle(userID, articleID string, role models.RoleT
 	}
 
 	return nil
-
 }
 
 func (s *ArticleService) IncrementArticleView(articleID string) error {
 	article := &models.Article{}
 
-	if err := s.DB.Where("id : ?", articleID).First(&article).Error; err != nil {
+	if err := s.DB.Where("id = ?", articleID).First(&article).Error; err != nil {
 		return err
 	}
 
