@@ -18,21 +18,29 @@ func NewCloudinaryService(cld *cloudinary.Cloudinary) *CloudinaryService {
 	}
 }
 
-func (s *CloudinaryService) UploadThumbnailImage(fileHeader *multipart.FileHeader) (string, error) {
+func (s *CloudinaryService) UploadImage(fileHeader *multipart.FileHeader, folder string) (string, string, error) {
 	file, err := fileHeader.Open()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	defer file.Close()
 
 	uploadResult, err := s.cld.Upload.Upload(context.Background(), file, uploader.UploadParams{
-		Folder: "thumbnail_berita",
+		Folder: folder,
 	})
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return uploadResult.SecureURL, nil
+	return uploadResult.SecureURL, uploadResult.PublicID, nil
+}
+
+func (s *CloudinaryService) DeleteImage(publicID string) error {
+	_, err := s.cld.Upload.Destroy(context.Background(), uploader.DestroyParams{
+		PublicID: publicID,
+	})
+
+	return err
 }

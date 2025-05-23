@@ -10,18 +10,18 @@ import (
 )
 
 type ArticleHandler struct {
-	ArticleService   *services.ArticleService
-	CategoryService  *services.CategoryService
-	TagService       *services.TagService
-	CoudinaryService *services.CloudinaryService
+	ArticleService    *services.ArticleService
+	CategoryService   *services.CategoryService
+	TagService        *services.TagService
+	CloudinaryService *services.CloudinaryService
 }
 
 func NewArticleHandler(articleService *services.ArticleService, categoryService *services.CategoryService, tagService *services.TagService, cloudinaryService *services.CloudinaryService) *ArticleHandler {
 	return &ArticleHandler{
-		ArticleService:   articleService,
-		CategoryService:  categoryService,
-		TagService:       tagService,
-		CoudinaryService: cloudinaryService,
+		ArticleService:    articleService,
+		CategoryService:   categoryService,
+		TagService:        tagService,
+		CloudinaryService: cloudinaryService,
 	}
 }
 
@@ -91,7 +91,7 @@ func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
 	var thumbnailURL string
 	fileHeader, err := c.FormFile("thumbnail")
 	if err == nil && fileHeader != nil {
-		thumbnailURL, err = h.CoudinaryService.UploadThumbnailImage(fileHeader)
+		thumbnailURL, _, err = h.CloudinaryService.UploadImage(fileHeader, "thumbnail_berita")
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to upload thumbnail",
@@ -185,14 +185,20 @@ func (h *ArticleHandler) UpdateArticle(c *fiber.Ctx) error {
 
 	fileHeader, err := c.FormFile("thumbnail")
 	if err == nil && fileHeader != nil {
-		thumbnailURL, err := h.CoudinaryService.UploadThumbnailImage(fileHeader)
+		if article.ThumbnailPublicID != "" {
+			_ = h.CloudinaryService.DeleteImage(article.ThumbnailPublicID)
+		}
+
+		thumbnailURL, publicID, err := h.CloudinaryService.UploadImage(fileHeader, "thumbnail_berita")
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to upload thumbnail",
 				"error":   err.Error(),
 			})
 		}
+
 		article.Thumbnail = thumbnailURL
+		article.ThumbnailPublicID = publicID
 	}
 
 	if categoryName != "" {

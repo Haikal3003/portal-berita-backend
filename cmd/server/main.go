@@ -38,7 +38,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService)
 
 	userService := services.NewUserService(database.DB)
-	userHandler := handlers.NewUserHandler(userService)
+	userHandler := handlers.NewUserHandler(userService, cloudinaryService)
 
 	categoryService := services.NewCategoryService(database.DB)
 	tagService := services.NewTagService(database.DB)
