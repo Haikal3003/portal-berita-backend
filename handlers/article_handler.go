@@ -3,22 +3,25 @@ package handlers
 import (
 	"portal-berita-backend/models"
 	"portal-berita-backend/services"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gosimple/slug"
 )
 
 type ArticleHandler struct {
-	ArticleService  *services.ArticleService
-	CategoryService *services.CategoryService
-	TagService      *services.TagService
+	ArticleService   *services.ArticleService
+	CategoryService  *services.CategoryService
+	TagService       *services.TagService
+	CoudinaryService *services.CloudinaryService
 }
 
-func NewArticleHandler(articleService *services.ArticleService, categoryService *services.CategoryService, tagService *services.TagService) *ArticleHandler {
+func NewArticleHandler(articleService *services.ArticleService, categoryService *services.CategoryService, tagService *services.TagService, cloudinaryService *services.CloudinaryService) *ArticleHandler {
 	return &ArticleHandler{
-		ArticleService:  articleService,
-		CategoryService: categoryService,
-		TagService:      tagService,
+		ArticleService:   articleService,
+		CategoryService:  categoryService,
+		TagService:       tagService,
+		CoudinaryService: cloudinaryService,
 	}
 }
 
@@ -73,15 +76,6 @@ func (h *ArticleHandler) GetArticleByID(c *fiber.Ctx) error {
 
 // CREATE ARTICLE
 func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
-
-	var req ArticleRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid Input",
-			"error":   err.Error(),
-		})
-	}
-
 	authorID := c.Locals("userID")
 	if authorID == nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -89,7 +83,24 @@ func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
 		})
 	}
 
-	category, err := h.CategoryService.FindOrCreateCategory(req.Category.Name)
+	title := c.FormValue("title")
+	content := c.FormValue("content")
+	categoryName := c.FormValue("category")
+	tagsRaw := c.FormValue("tags")
+
+	var thumbnailURL string
+	fileHeader, err := c.FormFile("thumbnail")
+	if err == nil && fileHeader != nil {
+		thumbnailURL, err = h.CoudinaryService.UploadThumbnailImage(fileHeader)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to upload thumbnail",
+				"error":   err.Error(),
+			})
+		}
+	}
+
+	category, err := h.CategoryService.FindOrCreateCategory(categoryName)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to process category",
@@ -97,19 +108,33 @@ func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
 		})
 	}
 
-	tags, err := h.TagService.FindOrCreateTags(req.Tags)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to process tags",
-			"error":   err.Error(),
-		})
+	var tags []models.Tag
+	if tagsRaw != "" {
+		tagNames := strings.Split(tagsRaw, ",")
+		for i := range tagNames {
+			tagNames[i] = strings.TrimSpace(tagNames[i])
+		}
+
+		var tagModels []models.Tag
+
+		for _, name := range tagNames {
+			tagModels = append(tagModels, models.Tag{Name: name})
+		}
+
+		tags, err = h.TagService.FindOrCreateTags(tagModels)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to process tags",
+				"error":   err.Error(),
+			})
+		}
 	}
 
 	article := models.Article{
-		Title:      req.Title,
-		Slug:       slug.Make(req.Title),
-		Content:    req.Content,
-		Thumbnail:  req.Thumbnail,
+		Title:      title,
+		Slug:       slug.Make(title),
+		Content:    content,
+		Thumbnail:  thumbnailURL,
 		CategoryID: category.ID,
 		AuthorID:   authorID.(string),
 		Tags:       tags,
@@ -127,7 +152,6 @@ func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
 		"message": "Article created successfully",
 		"data":    createdArticle,
 	})
-
 }
 
 // UPDATE ARTICLE
@@ -139,13 +163,10 @@ func (h *ArticleHandler) UpdateArticle(c *fiber.Ctx) error {
 		})
 	}
 
-	var req ArticleRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid input",
-			"error":   err.Error(),
-		})
-	}
+	title := c.FormValue("title")
+	content := c.FormValue("content")
+	categoryName := c.FormValue("category")
+	tagsRaw := c.FormValue("tags")
 
 	article := &models.Article{}
 	if err := h.CategoryService.DB.Preload("Tags").Preload("Category").Where("id = ?", articleID).First(&article).Error; err != nil {
@@ -154,13 +175,28 @@ func (h *ArticleHandler) UpdateArticle(c *fiber.Ctx) error {
 		})
 	}
 
-	article.Title = req.Title
-	article.Slug = slug.Make(req.Title)
-	article.Content = req.Content
-	article.Thumbnail = req.Thumbnail
+	if title != "" {
+		article.Title = title
+		article.Slug = slug.Make(title)
+	}
+	if content != "" {
+		article.Content = content
+	}
 
-	if req.Category.Name != "" {
-		category, err := h.CategoryService.FindOrCreateCategory(req.Category.Name)
+	fileHeader, err := c.FormFile("thumbnail")
+	if err == nil && fileHeader != nil {
+		thumbnailURL, err := h.CoudinaryService.UploadThumbnailImage(fileHeader)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to upload thumbnail",
+				"error":   err.Error(),
+			})
+		}
+		article.Thumbnail = thumbnailURL
+	}
+
+	if categoryName != "" {
+		category, err := h.CategoryService.FindOrCreateCategory(categoryName)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to update category",
@@ -170,14 +206,25 @@ func (h *ArticleHandler) UpdateArticle(c *fiber.Ctx) error {
 		article.CategoryID = category.ID
 	}
 
-	if len(req.Tags) > 0 {
-		tags, err := h.TagService.FindOrCreateTags(req.Tags)
+	if tagsRaw != "" {
+		tagNames := strings.Split(tagsRaw, ",")
+		for i := range tagNames {
+			tagNames[i] = strings.TrimSpace(tagNames[i])
+		}
+
+		var tagModels []models.Tag
+		for _, name := range tagNames {
+			tagModels = append(tagModels, models.Tag{Name: name})
+		}
+
+		tags, err := h.TagService.FindOrCreateTags(tagModels)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to update tags",
 				"error":   err.Error(),
 			})
 		}
+
 		if err := h.TagService.DB.Model(&article).Association("Tags").Replace(tags); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to replace article tags",

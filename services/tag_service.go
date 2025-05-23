@@ -18,16 +18,24 @@ func NewTagService(db *gorm.DB) *TagService {
 func (s *TagService) FindOrCreateTags(tagInputs []models.Tag) ([]models.Tag, error) {
 	var tags []models.Tag
 	for _, inputTag := range tagInputs {
+		slugStr := slug.Make(inputTag.Name)
 		var tag models.Tag
-		if err := s.DB.Where("name = ?", inputTag.Name).First(&tag).Error; err != nil {
-			tag = models.Tag{
-				Name: inputTag.Name,
-				Slug: slug.Make(inputTag.Name),
-			}
-			if err := s.DB.Create(&tag).Error; err != nil {
+
+		err := s.DB.Where("slug = ?", slugStr).First(&tag).Error
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				tag = models.Tag{
+					Name: inputTag.Name,
+					Slug: slugStr,
+				}
+				if err := s.DB.Create(&tag).Error; err != nil {
+					return nil, err
+				}
+			} else {
 				return nil, err
 			}
 		}
+
 		tags = append(tags, tag)
 	}
 	return tags, nil

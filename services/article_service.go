@@ -143,17 +143,17 @@ func (s *ArticleService) GetSavedArticle(userID string) ([]models.SavedArticle, 
 
 func (s *ArticleService) SaveArticle(userID, articleID string, role models.RoleType) error {
 	if role != models.RoleUser {
-		return errors.New("Only user can save article")
+		return errors.New("only user can save article")
 	}
 
 	var article models.Article
 	if err := s.DB.Where("id = ?", articleID).First(&article).Error; err != nil {
-		return errors.New("Article not found")
+		return errors.New("article not found")
 	}
 
 	var existing models.SavedArticle
 	if err := s.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&existing).Error; err != nil {
-		return errors.New("Article already saved")
+		return errors.New("article already saved")
 	}
 
 	savedArticle := models.SavedArticle{
@@ -162,7 +162,7 @@ func (s *ArticleService) SaveArticle(userID, articleID string, role models.RoleT
 	}
 
 	if err := s.DB.Create(&savedArticle).Error; err != nil {
-		return errors.New("Failed to save article")
+		return errors.New("failed to save article")
 	}
 
 	return nil
