@@ -12,5 +12,5 @@ func CommentRoutes(router fiber.Router, commentHandler *handlers.CommentHandler)
 
 	commentRoutes.Get("/:id", commentHandler.GetArticleComments)
 	commentRoutes.Post("/add-comment/:id", commentHandler.AddComment)
-	commentRoutes.Delete("/", commentHandler.DeleteComment)
+	commentRoutes.Delete("/:id", commentHandler.DeleteComment)
 }
