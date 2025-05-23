@@ -9,16 +9,18 @@ import (
 )
 
 type ArticleHandler struct {
-	ArticleService  *services.ArticleService
-	CategoryService *services.CategoryService
-	TagService      *services.TagService
+	ArticleService   *services.ArticleService
+	CategoryService  *services.CategoryService
+	TagService       *services.TagService
+	CoudinaryService *services.CloudinaryService
 }
 
-func NewArticleHandler(articleService *services.ArticleService, categoryService *services.CategoryService, tagService *services.TagService) *ArticleHandler {
+func NewArticleHandler(articleService *services.ArticleService, categoryService *services.CategoryService, tagService *services.TagService, cloudinaryService *services.CloudinaryService) *ArticleHandler {
 	return &ArticleHandler{
-		ArticleService:  articleService,
-		CategoryService: categoryService,
-		TagService:      tagService,
+		ArticleService:   articleService,
+		CategoryService:  categoryService,
+		TagService:       tagService,
+		CoudinaryService: cloudinaryService,
 	}
 }
 

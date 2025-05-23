@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"portal-berita-backend/config"
 	"portal-berita-backend/database"
 	"portal-berita-backend/handlers"
 	"portal-berita-backend/routes"
@@ -28,6 +29,11 @@ func main() {
 	app := fiber.New()
 
 	// init service dan handler
+
+	// init cloudinary
+	cld := config.InitCloudinary()
+	cloudinaryService := services.NewCloudinaryService(cld)
+
 	authService := services.NewAuthService(database.DB)
 	authHandler := handlers.NewAuthHandler(authService)
 
@@ -38,7 +44,7 @@ func main() {
 	tagService := services.NewTagService(database.DB)
 
 	articleService := services.NewArticleService(database.DB)
-	articleHandler := handlers.NewArticleHandler(articleService, categoryService, tagService)
+	articleHandler := handlers.NewArticleHandler(articleService, categoryService, tagService, cloudinaryService)
 
 	commentService := services.NewCommentService(database.DB)
 	commentHandler := handlers.NewCommentHandler(commentService)
