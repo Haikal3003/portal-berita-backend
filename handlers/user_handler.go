@@ -1,19 +1,20 @@
 package handlers
 
 import (
-	"portal-berita-backend/models"
 	"portal-berita-backend/services"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
-	UserService *services.UserService
+	UserService       *services.UserService
+	CloudinaryService *services.CloudinaryService
 }
 
-func NewUserHandler(userService *services.UserService) *UserHandler {
+func NewUserHandler(userService *services.UserService, cloudinaryService *services.CloudinaryService) *UserHandler {
 	return &UserHandler{
-		UserService: userService,
+		UserService:       userService,
+		CloudinaryService: cloudinaryService,
 	}
 }
 
@@ -51,34 +52,55 @@ func (h *UserHandler) GetUserById(c *fiber.Ctx) error {
 func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
 
-	type UpdateProfileInput struct {
-		Fullname  string `json:"fullname"`
-		Username  string `json:"username"`
-		Bio       string `json:"bio"`
-		Image     string `json:"image"`
-		Address   string `json:"address"`
-		BirthDate string `json:"birth_date"`
-	}
+	fullname := c.FormValue("fullname")
+	username := c.FormValue("username")
+	bio := c.FormValue("bio")
+	address := c.FormValue("address")
+	birthDate := c.FormValue("birth_date")
 
-	var input UpdateProfileInput
-
-	if err := c.BodyParser(&input); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid input",
+	user, err := h.UserService.GetUserByID(userID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User not found",
 			"error":   err.Error(),
 		})
 	}
 
-	profile := &models.Profile{
-		Fullname:  input.Fullname,
-		Username:  input.Username,
-		Bio:       input.Bio,
-		Image:     input.Image,
-		Address:   input.Address,
-		BirthDate: input.BirthDate,
+	if fullname != "" {
+		user.Profile.Fullname = fullname
 	}
 
-	updatedProfile, err := h.UserService.UpdateUserProfile(userID, profile)
+	if username != "" {
+		user.Profile.Username = username
+	}
+	if bio != "" {
+		user.Profile.Bio = bio
+	}
+	if address != "" {
+		user.Profile.Address = address
+	}
+	if birthDate != "" {
+		user.Profile.BirthDate = birthDate
+	}
+
+	fileHeader, err := c.FormFile("image")
+	if err == nil && fileHeader != nil {
+		if user.Profile.ImagePublicID != "" {
+			_ = h.CloudinaryService.DeleteImage(user.Profile.ImagePublicID)
+		}
+
+		imageURL, publicID, err := h.CloudinaryService.UploadImage(fileHeader, "profile_image")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to upload image",
+				"error":   err.Error(),
+			})
+		}
+		user.Profile.Image = imageURL
+		user.Profile.ImagePublicID = publicID
+	}
+
+	updatedProfile, err := h.UserService.UpdateUserProfile(userID, user.Profile)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to update profile",
