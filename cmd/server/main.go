@@ -11,6 +11,7 @@ import (
 	"portal-berita-backend/services"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 )
 
@@ -28,7 +29,11 @@ func main() {
 
 	app := fiber.New()
 
-	// init service dan handler
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "http://localhost:4321, https://your-frontend-domain.com",
+		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+	}))
 
 	// init cloudinary
 	cld := config.InitCloudinary()
@@ -56,5 +61,6 @@ func main() {
 	routes.ArticleRoutes(api, articleHandler)
 	routes.CommentRoutes(api, commentHandler)
 
-	app.Listen(":" + os.Getenv("PORT"))
+	// listen port
+	log.Fatal(app.Listen(":" + os.Getenv("PORT")))
 }

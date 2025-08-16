@@ -10,7 +10,7 @@ require (
 	github.com/creasty/defaults v1.7.0 // indirect
 	github.com/go-sql-driver/mysql v1.9.1 // indirect
 	github.com/gofiber/contrib/jwt v1.0.10 // indirect
-	github.com/gofiber/fiber/v2 v2.52.6 // indirect
+	github.com/gofiber/fiber/v2 v2.52.9 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/schema v1.4.1 // indirect
